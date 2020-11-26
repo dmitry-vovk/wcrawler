@@ -33,16 +33,12 @@ func Parse(body io.Reader) (*ParsedPage, error) {
 	}
 	if bURL, ok := doc.Find(`base[href]`).First().Attr("href"); ok {
 		page.BaseURL = strings.TrimSpace(bURL)
-		if bu, err := url.Parse(page.BaseURL); err == nil {
+		if bu, err := url.Parse(page.BaseURL); err == nil { // ignore unparsable URL
 			for i := range page.Links {
-				if lu, err := url.Parse(page.Links[i]); err == nil {
+				if lu, err := url.Parse(page.Links[i]); err == nil { // don't handle bad links
 					page.Links[i] = bu.ResolveReference(lu).String()
-				} else {
-					// Page link is bad, leave it as it is
 				}
 			}
-		} else {
-			// Base URL is not usable, ignore it
 		}
 	}
 	return &page, nil

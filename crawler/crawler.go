@@ -157,7 +157,10 @@ func (c *Crawler) validateConfig() error {
 
 // fetchRobots tries to get 'robots.txt' file for the seed URL
 func (c *Crawler) fetchRobots() *robotstxt.RobotsData {
-	u, _ := url.Parse(c.cfg.SeedURL)
+	u, err := url.Parse(c.cfg.SeedURL)
+	if err != nil {
+		panic("should've checked seed URL!")
+	}
 	u.Path = "/robots.txt"
 	resp, err := http.Get(u.String())
 	if err != nil {

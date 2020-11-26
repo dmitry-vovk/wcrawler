@@ -41,7 +41,7 @@ func Filter(link string) (string, bool) {
 	u, err := url.Parse(link)
 	if err != nil {
 		return "", false
-	} else if host := u.Hostname(); host != baseDomain {
+	} else if host := u.Hostname(); baseDomain != "" && host != baseDomain {
 		return "", false
 	}
 	if robots != nil {
