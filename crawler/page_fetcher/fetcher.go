@@ -40,6 +40,7 @@ func Fetch(r *Request) (*Response, error) {
 			if !r.unacceptablePage(resp) {
 				return nil, errors.New("unacceptable page type")
 			}
+			log.Printf("HEAD request was ok, going to do GET request for URL %s", link)
 		} else {
 			log.Printf("HEAD request error: %s", err)
 		}

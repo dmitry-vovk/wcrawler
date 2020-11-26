@@ -13,6 +13,8 @@ type Config struct {
 	AllowPrefixes []string `json:"allow_prefixes"`
 	// Whether to take in account robots.txt rules, better 'yes' to be polite
 	IgnoreRobotsTxt bool `json:"ignore_robots_txt"`
+	// Do HEAD requests before GET requests to avoid fetching inappropriate files
+	DoHeadRequests bool `json:"do_head_requests"`
 	// HTTP user agent string to use
 	UserAgent string `json:"user_agent"`
 	// Do not crawl more than this number of pages
@@ -21,6 +23,7 @@ type Config struct {
 	MaxParallelRequests int `json:"max_parallel_requests"`
 }
 
+// Read returns config read from file or error
 func Read(filePath string) (*Config, error) {
 	f, err := os.Open(filePath)
 	if err != nil {

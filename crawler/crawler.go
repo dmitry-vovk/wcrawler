@@ -108,11 +108,15 @@ func (c *Crawler) processLink(link string) {
 	limiter.Start()
 	defer limiter.Finish()
 	u, err := url.Parse(link)
+	if err != nil {
+		// if parsing fails here, we have a bug somewhere before
+		panic(err)
+	}
 	request := page_fetcher.Request{
 		URL:           u,
 		HTTPReferrer:  "", // TODO populate referrer
 		UserAgent:     c.cfg.UserAgent,
-		DoHeadRequest: true,
+		DoHeadRequest: c.cfg.DoHeadRequests,
 		AcceptableContentTypes: map[string]struct{}{
 			"text/html": {},
 		},
@@ -122,21 +126,21 @@ func (c *Crawler) processLink(link string) {
 		log.Printf("Error fetching page %q: %s", link, err)
 		return
 	}
-	if response.StatusCode == http.StatusOK {
-		page, err := page_parser.Parse(response.Body)
-		_ = response.Body.Close()
-		if err != nil {
-			log.Printf("Error parsing response from %q: %s", link, err)
-			return
-		}
-		for i := range page.Links {
-			if pageLink, err := url.Parse(page.Links[i]); err == nil {
-				resolvedURL := u.ResolveReference(pageLink)
-				queue.Enqueue(resolvedURL.String())
-			}
-		}
-	} else {
+	if response.StatusCode != http.StatusOK {
 		log.Printf("Got %d status code from %q", response.StatusCode, link)
+		return
+	}
+	page, err := page_parser.Parse(response.Body)
+	_ = response.Body.Close()
+	if err != nil {
+		log.Printf("Error parsing response from %q: %s", link, err)
+		return
+	}
+	for i := range page.Links {
+		if pageLink, err := url.Parse(page.Links[i]); err == nil {
+			resolvedURL := u.ResolveReference(pageLink)
+			queue.Enqueue(resolvedURL.String())
+		}
 	}
 }
 
