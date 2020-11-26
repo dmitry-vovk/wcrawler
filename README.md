@@ -1,2 +1,2 @@
-# wcrowler
+# wcrawler
 Simple web crawler exercise
