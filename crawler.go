@@ -32,25 +32,30 @@ func main() {
 	// Initialize subsystems
 	u, err := url.Parse(cfg.SeedURL)
 	if err != nil {
-		log.Printf("Error parsing seed URL:: %s", err)
+		log.Printf("Error parsing seed URL: %s", err)
+		os.Exit(2)
+	} else if u.Hostname() == "" {
+		log.Print("Invalid seed URL")
+		os.Exit(2)
 	}
-	f := url_filter.NewFilter(u.Hostname())
+	filter := url_filter.
+		NewFilter(u.Hostname()).
+		AllowWWWPrefix(cfg.AllowWWWPrefix)
 	if !cfg.IgnoreRobotsTxt {
 		u.Path = "/robots.txt"
 		if robots := fetchRobots(u.String()); robots != nil {
-			f.WithRobots(robots, cfg.UserAgent)
+			filter.WithRobots(robots, cfg.UserAgent)
 		}
 	}
+	fetcher := page_fetcher.NewFetcher(
+		page_fetcher.WithUserAgent(cfg.UserAgent),
+		page_fetcher.WithHeadRequests(cfg.DoHeadRequests),
+	)
 	// Assemble a crawler instance
 	c := crawler.
 		New().
-		WithFetcher(
-			page_fetcher.NewFetcher(
-				page_fetcher.WithUserAgent(cfg.UserAgent),
-				page_fetcher.WithHeadRequests(cfg.DoHeadRequests),
-			),
-		).
-		WithFilter(f).
+		WithFilter(filter).
+		WithFetcher(fetcher).
 		MaxPages(cfg.MaxPages).
 		MaxParallelRequests(cfg.MaxParallelRequests)
 	// Run
@@ -77,7 +82,7 @@ type Config struct {
 	// HTTP user agent string to use
 	UserAgent string `json:"user_agent"`
 	// Do not crawl more than this number of pages
-	MaxPages uint `json:"max_pages"`
+	MaxPages uint64 `json:"max_pages"`
 	// How many requests to allow to run in parallel
 	MaxParallelRequests uint `json:"max_parallel_requests"`
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type Crawler struct {
-	maxPages            uint
+	maxPages            uint64
 	maxParallelRequests uint
 	fetcher             types.Fetcher
 	filter              types.Filter
@@ -19,7 +19,7 @@ type Crawler struct {
 	processedLinks      map[string]struct{}            // Visited links
 	collectedLinks      map[string]map[string]struct{} // Collection of visited pages with found links
 	doneC               chan struct{}                  // Done signal
-	pagesN              uint
+	pagesN              uint64
 }
 
 const defaultMaxParallelRequests = 1
@@ -36,7 +36,7 @@ func New() *Crawler {
 	}
 }
 
-func (c *Crawler) MaxPages(maxPages uint) *Crawler {
+func (c *Crawler) MaxPages(maxPages uint64) *Crawler {
 	c.maxPages = maxPages
 	return c
 }

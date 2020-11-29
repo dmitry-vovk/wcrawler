@@ -25,3 +25,36 @@ for example to `facebook.com` or `community.example.com`.
 * The crawler handles cookies to avoid certain scenarios when a website sets tracking cookie with redirection,
   which may cause loops and other undesired behaviour.
 * The crawler sends `Referer` header to counter "anti-hotlinking" measures.
+
+## Configuration
+
+Crawler configuration file has the following sytax:
+```json
+{
+  "seed_url": "https://monzo.com",
+  "ignore_robots_txt": false,
+  "allow_www_prefix": true,
+  "user_agent": "CrawlBot/0.1",
+  "do_head_requests": true,
+  "max_pages": 100,
+  "max_parallel_requests": 5
+}
+```
+Crawler will search for config file in this order:
+1. Command line argument: `crawler config.json`
+2. Environment variable: `CRAWLER_CONFIG=config.json crawler`
+3. A file named `config.json` in the current PATH: `crawler`
+
+## Building
+
+`go build crawler.go`
+
+## Testing
+
+`go test -race ./...`
+
+## Running
+
+Crawler outputs results into sdtOut, logs go into stdErr.
+In order to collect results, the following command will do:
+`crawler > results.txt`.

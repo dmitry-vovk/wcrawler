@@ -52,7 +52,7 @@ func (t *Task) Process(fetcher types.Fetcher) (result CrawlResult) {
 	result.Link = t.job.Link
 	response, err := fetcher.Fetch(&request)
 	if err != nil {
-		log.Printf("Error fetching page %q: %s", t.job, err)
+		log.Printf("Error fetching page %q: %s", t.job.Link, err)
 		return
 	}
 	defer func() {

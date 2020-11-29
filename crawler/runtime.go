@@ -2,6 +2,8 @@ package crawler
 
 import (
 	"log"
+	"sync/atomic"
+	"time"
 )
 
 // processor sequentially processes page crawls
@@ -18,7 +20,7 @@ out:
 		case result := <-c.processedLinksC:
 			delete(c.processingLinks, result.Link)
 			c.collectedLinks[result.Link] = result.CollectLinks()
-			if c.pagesN >= c.maxPages {
+			if atomic.LoadUint64(&c.pagesN) >= c.maxPages {
 				break out
 			}
 			if len(c.processingLinks) == 0 {
@@ -26,15 +28,15 @@ out:
 			}
 		}
 	}
-	log.Printf("Processor exited")
 	log.Printf("Pages visited: %d", c.pagesN)
 	close(c.doneC)
 }
 
-// processLink handles single page crawling
+// processJob handles single page crawling
 func (c *Crawler) processJob(link CrawlJob) {
 	c.limiterC <- struct{}{}
-	log.Printf("Starting: %s", link.Link)
+	start := time.Now()
+	log.Printf("Starting link: %s", link.Link)
 	task := NewTask(link)
 	result := task.Process(c.fetcher)
 	for i := range result.Links {
@@ -42,8 +44,8 @@ func (c *Crawler) processJob(link CrawlJob) {
 			c.queuedLinksC <- CrawlJob{Link: cleanLink, Referrer: link.Referrer}
 		}
 	}
+	log.Printf("Finished link in %s: %s", time.Since(start), link.Link)
 	c.processedLinksC <- result
 	<-c.limiterC
-	c.pagesN++
-	log.Printf("Finished: %s", link.Link)
+	atomic.AddUint64(&c.pagesN, 1)
 }

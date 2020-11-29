@@ -13,7 +13,7 @@ import (
 
 func TestCrawlerBuild(t *testing.T) {
 	const (
-		maxPages            uint = 2
+		maxPages            uint64 = 2
 		maxParallelRequests uint = 76
 	)
 	c := New().
