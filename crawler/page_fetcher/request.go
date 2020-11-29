@@ -15,12 +15,14 @@ type Request struct {
 	AcceptableContentTypes map[string]struct{}
 }
 
-func (r *Request) unacceptablePage(resp *http.Response) bool {
+// acceptableResponse tells if response is ok for the request parameters
+func (r *Request) acceptableResponse(resp *http.Response) bool {
 	if r.AcceptableContentTypes == nil {
 		return true
 	}
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
+		// We reject unknown content types
 		return false
 	}
 	for expectedContentType := range r.AcceptableContentTypes {

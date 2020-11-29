@@ -1,9 +1,9 @@
 {
-  "seed_url": "https://en.wikipedia.org",
+  "seed_url": "https://monzo.com",
   "ignore_robots_txt": false,
   "allow_www_prefix": true,
   "user_agent": "CrawlBot/0.1",
-  "do_head_requests": true,
+  "do_head_requests": false,
   "max_pages": 100,
   "max_parallel_requests": 5
 }

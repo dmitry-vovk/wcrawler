@@ -8,9 +8,7 @@ import (
 
 type Response struct {
 	// Requested URL of the page
-	OriginalURL *url.URL
-	// Actual URL of the page
-	ActualURL *url.URL
+	URL *url.URL
 	// Response status code
 	StatusCode int
 	// Response headers

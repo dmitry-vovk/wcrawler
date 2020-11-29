@@ -34,7 +34,7 @@ out:
 // processLink handles single page crawling
 func (c *Crawler) processJob(link CrawlJob) {
 	c.limiterC <- struct{}{}
-	log.Printf("Starting: %s", link)
+	log.Printf("Starting: %s", link.Link)
 	task := NewTask(link)
 	result := task.Process(c.fetcher)
 	for i := range result.Links {
@@ -45,5 +45,5 @@ func (c *Crawler) processJob(link CrawlJob) {
 	c.processedLinksC <- result
 	<-c.limiterC
 	c.pagesN++
-	log.Printf("Finished: %s", link)
+	log.Printf("Finished: %s", link.Link)
 }

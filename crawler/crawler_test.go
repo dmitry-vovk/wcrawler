@@ -115,14 +115,12 @@ func (t testFetcher) Fetch(_ *page_fetcher.Request) (*page_fetcher.Response, err
 	}
 	body := ioutil.NopCloser(bytes.NewBuffer([]byte(testHTML)))
 	if t.nilBody {
-		body = ioutil.NopCloser(bytes.NewBuffer([]byte{0, 1, 2, 3, 4}))
+		body = ioutil.NopCloser(bytes.NewBuffer([]byte(`<html><body><aef<eqf>>>qq></body></ht>`)))
 	}
 	return &page_fetcher.Response{
-		OriginalURL: nil,
-		ActualURL:   nil,
-		StatusCode:  t.statusCode,
-		Headers:     nil,
-		Body:        body,
+		StatusCode: t.statusCode,
+		Headers:    nil,
+		Body:       body,
 	}, nil
 }
 

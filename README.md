@@ -14,9 +14,14 @@ for example to `facebook.com` or `community.example.com`.
 
 ## Extended requirements
 
-* Scalability: the crawler shall work with single domain and process up to a few thousand pages. 
-* Robustness: the crawler shall tolerate errors when fetching pages, handle slow responses by setting a time out threshold.
-* Politeness: the crawler shall obey `robots.txt` rules by not visiting pages that are not allowed to visit.
+* Scalability: the crawler works with single domain and processes relative small number of pages. 
+* Robustness: the crawler tolerates errors when fetching pages, handle slow responses.
+* Politeness: the crawler obeys `robots.txt` rules by not visiting pages that are not allowed to visit.
 * Extensibility: it should be fairly easy to add new functionality, such as:
   * Additional content processing, e.g. extracting and saving images.
   * Downloading certain file types, e.g. PDF documents. 
+* The crawler is able to do HEAD requests before downloading a URL to determine if the URL returns HTML, 
+  as we do not want to download files of different types. Failure with HEAD request shall not prevent it to do GET requests.
+* The crawler handles cookies to avoid certain scenarios when a website sets tracking cookie with redirection,
+  which may cause loops and other undesired behaviour.
+* The crawler sends `Referer` header to counter "anti-hotlinking" measures.

@@ -86,13 +86,13 @@ func TestFailedHead(t *testing.T) {
 		},
 	}
 	s.failHeadRequest = true
-	f := NewFetcher(WithTimeout(time.Second))
+	f := NewFetcher(WithTimeout(time.Second), WithHeadRequests(true))
 	if resp, err := f.Fetch(req); assert.NoError(t, err) {
 		if body, err := ioutil.ReadAll(resp.Body); assert.NoError(t, err) {
 			assert.Equal(t, []byte(testHTML), body)
 		}
 		_ = resp.Body.Close()
-		assert.Equal(t, []string{"GET"}, s.methods())
+		assert.Equal(t, []string{"HEAD", "GET"}, s.methods())
 		assert.Equal(t, s.responseCode, resp.StatusCode)
 	}
 	_ = s.listener.Close()
@@ -146,7 +146,7 @@ func TestAccept(t *testing.T) {
 	_ = s.listener.Close()
 }
 
-func TestContentType(t *testing.T) {
+func TestContentTypeHead(t *testing.T) {
 	s := startServer()
 	req := &Request{
 		URL: &url.URL{
@@ -155,12 +155,27 @@ func TestContentType(t *testing.T) {
 		},
 		AcceptableContentTypes: map[string]struct{}{"application/binary": {}},
 	}
-	// Acceptable content type makes sense with HEAD requests only
 	f := NewFetcher(WithHeadRequests(true))
 	_, err := f.Fetch(req)
 	assert.Equal(t, ErrBadContentType, err)
 	_ = s.listener.Close()
 }
+
+func TestContentTypeGet(t *testing.T) {
+	s := startServer()
+	req := &Request{
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   s.listener.Addr().String(),
+		},
+		AcceptableContentTypes: map[string]struct{}{"application/binary": {}},
+	}
+	f := NewFetcher()
+	_, err := f.Fetch(req)
+	assert.Equal(t, ErrBadContentType, err)
+	_ = s.listener.Close()
+}
+
 
 type testServer struct {
 	listener        net.Listener
@@ -207,7 +222,9 @@ func (t *testServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.seenReferrers = append(t.seenReferrers, r.Header.Get("Referer"))
 	t.seenAccept = append(t.seenAccept, r.Header.Get("Accept"))
 	if t.failHeadRequest && r.Method == "HEAD" {
-		_ = t.listener.Close()
+		hj, _ := w.(http.Hijacker)
+		conn, _, _ := hj.Hijack()
+		_ = conn.Close()
 		return
 	}
 	if r.URL.Path == "/slow" {

@@ -11,7 +11,7 @@ func TestValidity(t *testing.T) {
 	{
 		req := Request{}
 		resp := http.Response{}
-		assert.True(t, req.unacceptablePage(&resp))
+		assert.True(t, req.acceptableResponse(&resp))
 	}
 	{
 		req := Request{
@@ -23,7 +23,7 @@ func TestValidity(t *testing.T) {
 			},
 		}
 		resp := http.Response{}
-		assert.False(t, req.unacceptablePage(&resp))
+		assert.False(t, req.acceptableResponse(&resp))
 	}
 	{
 		req := Request{
@@ -38,7 +38,7 @@ func TestValidity(t *testing.T) {
 		resp := http.Response{
 			Header: headers,
 		}
-		assert.False(t, req.unacceptablePage(&resp))
+		assert.False(t, req.acceptableResponse(&resp))
 	}
 	{
 		req := Request{
@@ -53,7 +53,7 @@ func TestValidity(t *testing.T) {
 		resp := http.Response{
 			Header: headers,
 		}
-		assert.True(t, req.unacceptablePage(&resp))
+		assert.True(t, req.acceptableResponse(&resp))
 	}
 	{
 		req := Request{
@@ -68,6 +68,6 @@ func TestValidity(t *testing.T) {
 		resp := http.Response{
 			Header: headers,
 		}
-		assert.True(t, req.unacceptablePage(&resp))
+		assert.True(t, req.acceptableResponse(&resp))
 	}
 }

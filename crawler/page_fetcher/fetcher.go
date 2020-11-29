@@ -56,13 +56,16 @@ func (f *Fetcher) Fetch(r *Request) (*Response, error) {
 		if err != nil {
 			// Error on HEAD request is not critical, let's do GET anyway
 			log.Printf("HEAD request error: %s", err)
-		} else if !r.unacceptablePage(resp) {
+		} else if !r.acceptableResponse(resp) {
 			return nil, ErrBadContentType
 		}
 	}
 	resp, err := f.client.Do(f.buildRequest(r, methodGET))
 	if err != nil {
 		return nil, err
+	}
+	if !r.acceptableResponse(resp) {
+		return nil, ErrBadContentType
 	}
 	return buildResponse(r, resp), nil
 }
@@ -81,10 +84,9 @@ func (f Fetcher) buildRequest(r *Request, method method) *http.Request {
 
 func buildResponse(req *Request, resp *http.Response) *Response {
 	return &Response{
-		OriginalURL: req.URL,
-		ActualURL:   resp.Request.URL,
-		StatusCode:  resp.StatusCode,
-		Headers:     resp.Header,
-		Body:        resp.Body,
+		URL:        req.URL,
+		StatusCode: resp.StatusCode,
+		Headers:    resp.Header,
+		Body:       resp.Body,
 	}
 }
