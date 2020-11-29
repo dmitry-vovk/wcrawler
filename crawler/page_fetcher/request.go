@@ -11,10 +11,6 @@ type Request struct {
 	URL *url.URL
 	// HTTP Referrer header value
 	HTTPReferrer string
-	// User-Agent header value
-	UserAgent string
-	// Try HEAD request before GET request
-	DoHeadRequest bool
 	// Valid content types
 	AcceptableContentTypes map[string]struct{}
 }

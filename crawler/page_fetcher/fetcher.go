@@ -1,63 +1,86 @@
 package page_fetcher
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"time"
 )
 
-const defaultTimeout = time.Second * 10
-
-var (
-	// HTTP client that will be used for requests
-	client = &http.Client{
-		Transport: &http.Transport{
-			// Here an below, setting sensible timeouts helps to avoid blocking
-			TLSHandshakeTimeout:   defaultTimeout,
-			ResponseHeaderTimeout: defaultTimeout,
-			ExpectContinueTimeout: defaultTimeout,
-		},
-		Timeout: defaultTimeout,
-	}
-)
-
-func init() {
-	// cookiejar.New without options does not return an error
-	client.Jar, _ = cookiejar.New(nil)
+type Fetcher struct {
+	timeout        time.Duration
+	accept         string
+	userAgent      string
+	doHeadRequests bool
+	client         *http.Client
 }
 
-func Fetch(r *Request) (*Response, error) {
-	log.Printf("Fetching %s", r.URL)
-	link := r.URL.String()
-	if r.DoHeadRequest {
-		httpRequest, _ := http.NewRequest("HEAD", link, nil)
-		httpRequest.Header.Add("User-Agent", r.UserAgent)
-		httpRequest.Header.Add("Referer", r.HTTPReferrer)
-		resp, err := client.Do(httpRequest)
-		if err == nil {
-			if !r.unacceptablePage(resp) {
-				return nil, errors.New("unacceptable page type")
-			}
-			log.Printf("HEAD request was ok, going to do GET request for URL %s", link)
-		} else {
+type method string
+
+const (
+	// Timeout value for network operations
+	defaultTimeout = time.Second * 10
+	// Tell servers we are interested in this content types
+	defaultAcceptHeader        = `text/html,application/xhtml+xml`
+	methodGET           method = `GET`
+	methodHEAD          method = `HEAD`
+)
+
+func NewFetcher(options ...Option) *Fetcher {
+	f := Fetcher{}
+	for _, fn := range options {
+		fn(&f)
+	}
+	if f.timeout == 0 {
+		f.timeout = defaultTimeout
+	}
+	if f.accept == "" {
+		f.accept = defaultAcceptHeader
+	}
+	f.client = &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout:   f.timeout,
+			ResponseHeaderTimeout: f.timeout,
+			ExpectContinueTimeout: f.timeout,
+		},
+		Timeout: f.timeout,
+	}
+	// cookiejar.New() without options does not return an error
+	f.client.Jar, _ = cookiejar.New(nil)
+	return &f
+}
+
+func (f *Fetcher) Fetch(r *Request) (*Response, error) {
+	if f.doHeadRequests {
+		resp, err := f.client.Do(f.buildRequest(r, methodHEAD))
+		if err != nil {
+			// Error on HEAD request is not critical, let's do GET anyway
 			log.Printf("HEAD request error: %s", err)
+		} else if !r.unacceptablePage(resp) {
+			return nil, ErrBadContentType
 		}
 	}
-	httpRequest, _ := http.NewRequest("GET", link, nil)
-	httpRequest.Header.Add("User-Agent", r.UserAgent)
-	httpRequest.Header.Add("Referer", r.HTTPReferrer)
-	resp, err := client.Do(httpRequest)
+	resp, err := f.client.Do(f.buildRequest(r, methodGET))
 	if err != nil {
 		return nil, err
 	}
 	return buildResponse(r, resp), nil
 }
 
+func (f Fetcher) buildRequest(r *Request, method method) *http.Request {
+	link := r.URL.String()
+	// http.NewRequest will not return an error with this set of arguments
+	httpRequest, _ := http.NewRequest(string(method), link, nil)
+	if f.userAgent != "" {
+		httpRequest.Header.Add("User-Agent", f.userAgent)
+	}
+	httpRequest.Header.Add("Referer", r.HTTPReferrer)
+	httpRequest.Header.Add("Accept", f.accept)
+	return httpRequest
+}
+
 func buildResponse(req *Request, resp *http.Response) *Response {
 	return &Response{
-		Error:       nil,
 		OriginalURL: req.URL,
 		ActualURL:   resp.Request.URL,
 		StatusCode:  resp.StatusCode,

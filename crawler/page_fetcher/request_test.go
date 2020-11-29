@@ -15,10 +15,9 @@ func TestValidity(t *testing.T) {
 	}
 	{
 		req := Request{
-			URL:           nil,
-			HTTPReferrer:  "",
-			UserAgent:     "",
-			DoHeadRequest: false,
+			URL:          nil,
+			HTTPReferrer: "",
+
 			AcceptableContentTypes: map[string]struct{}{
 				"text/html": {},
 			},
@@ -28,10 +27,8 @@ func TestValidity(t *testing.T) {
 	}
 	{
 		req := Request{
-			URL:           nil,
-			HTTPReferrer:  "",
-			UserAgent:     "",
-			DoHeadRequest: false,
+			URL:          nil,
+			HTTPReferrer: "",
 			AcceptableContentTypes: map[string]struct{}{
 				"text/html": {},
 			},
@@ -45,10 +42,8 @@ func TestValidity(t *testing.T) {
 	}
 	{
 		req := Request{
-			URL:           nil,
-			HTTPReferrer:  "",
-			UserAgent:     "",
-			DoHeadRequest: false,
+			URL:          nil,
+			HTTPReferrer: "",
 			AcceptableContentTypes: map[string]struct{}{
 				"text/html": {},
 			},
@@ -62,10 +57,8 @@ func TestValidity(t *testing.T) {
 	}
 	{
 		req := Request{
-			URL:           nil,
-			HTTPReferrer:  "",
-			UserAgent:     "",
-			DoHeadRequest: false,
+			URL:          nil,
+			HTTPReferrer: "",
 			AcceptableContentTypes: map[string]struct{}{
 				"text/html": {},
 			},

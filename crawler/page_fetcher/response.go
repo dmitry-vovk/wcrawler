@@ -7,8 +7,6 @@ import (
 )
 
 type Response struct {
-	// Whether the response is acceptable to process
-	Error error
 	// Requested URL of the page
 	OriginalURL *url.URL
 	// Actual URL of the page
