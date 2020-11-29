@@ -17,16 +17,11 @@ type Crawler struct {
 	limiterC            chan struct{}          // Simple limiter
 	queuedLinksC        chan crawlJob          // URLs to be processed
 	processedLinksC     chan crawlResult       // URLs that done processing
-	resultsC            chan result            // Channel to requests current results
 	processingLinks     map[string]struct{}    // Links that are currently being processed
 	processedLinks      map[string]struct{}    // Visited links
 	doneC               chan struct{}          // Done signal
 	pagesN              uint64
 	finished            bool
-}
-
-type result struct {
-	C chan map[string]map[string]struct{}
 }
 
 const defaultMaxParallelRequests = 1
@@ -74,7 +69,6 @@ func (c *Crawler) Run(seedURL string) error {
 	}
 	c.queuedLinksC = make(chan crawlJob)
 	c.processedLinksC = make(chan crawlResult)
-	c.resultsC = make(chan result)
 	c.processingLinks = make(map[string]struct{})
 	c.processedLinks = make(map[string]struct{})
 	c.doneC = make(chan struct{})
