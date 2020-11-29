@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Request provides all the data necessary to get the page by URL
 type Request struct {
 	// URL to visit
 	URL *url.URL
@@ -15,7 +16,7 @@ type Request struct {
 	AcceptableContentTypes map[string]struct{}
 }
 
-// acceptableResponse tells if response is ok for the request parameters
+// acceptableResponse tells if response is ok for the requested parameters
 func (r *Request) acceptableResponse(resp *http.Response) bool {
 	if r.AcceptableContentTypes == nil {
 		return true

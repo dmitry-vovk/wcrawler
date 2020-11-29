@@ -8,6 +8,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// ParsedPage represents contents of a web page
 type ParsedPage struct {
 	// List of collected links
 	Links []string
@@ -23,6 +24,7 @@ func (p *ParsedPage) addLink(link string) {
 	}
 }
 
+// resolveLinks tries to convert relative links into absolute ones
 func (p *ParsedPage) resolveLinks() {
 	if p.BaseURL == "" {
 		return
@@ -36,6 +38,7 @@ func (p *ParsedPage) resolveLinks() {
 	}
 }
 
+// Parse reads data from provided reader, extracting data
 func Parse(body io.Reader) (*ParsedPage, error) {
 	doc, err := goquery.NewDocumentFromReader(body)
 	if err != nil {
@@ -57,10 +60,12 @@ func Parse(body io.Reader) (*ParsedPage, error) {
 	return &page, nil
 }
 
+// acceptableLink tells if the link is ok to use
 func acceptableLink(href string) bool {
 	if href == "" {
 		return false
 	}
+	// 'fragments' are not ok
 	if strings.HasPrefix(href, "#") {
 		return false
 	}

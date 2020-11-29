@@ -8,23 +8,27 @@ import (
 	"github.com/PuerkitoBio/purell"
 )
 
-type RobotsTxt interface {
+// RobotsChecker defines a method to tell if this path allowed to be visited by this agent
+type RobotsChecker interface {
 	TestAgent(path, agent string) bool
 }
 
+// NormalizingFilter is a URL filter with basic normalisation rules
 type NormalizingFilter struct {
 	baseDomain string
 	allowWWW   bool
-	robots     RobotsTxt
+	robots     RobotsChecker
 	userAgent  string
 }
 
 var (
-	URLNormalizationFlags = purell.FlagsUsuallySafeGreedy |
+	// Set some sensible normalisation flags, may be tweaked to suit a specific site requirements
+	URLNormalisationFlags = purell.FlagsUsuallySafeGreedy |
 		purell.FlagRemoveDuplicateSlashes |
 		purell.FlagRemoveFragment
 )
 
+// NewFilter returns and instance of NormalizingFilter with sane defaults
 func NewFilter(baseDomain string) *NormalizingFilter {
 	f := NormalizingFilter{
 		baseDomain: baseDomain,
@@ -32,12 +36,14 @@ func NewFilter(baseDomain string) *NormalizingFilter {
 	return &f
 }
 
+// AllowWWWPrefix sets switch for handling commonly used "www" prefix
 func (f *NormalizingFilter) AllowWWWPrefix(allow bool) *NormalizingFilter {
 	f.allowWWW = allow
 	return f
 }
 
-func (f *NormalizingFilter) WithRobots(r RobotsTxt, agent string) *NormalizingFilter {
+// WithRobots injects RobotsChecker
+func (f *NormalizingFilter) WithRobots(r RobotsChecker, agent string) *NormalizingFilter {
 	f.robots, f.userAgent = r, agent
 	return f
 }
@@ -67,7 +73,7 @@ func (f *NormalizingFilter) Filter(link string) (string, bool) {
 			return "", false
 		}
 	}
-	link = purell.NormalizeURL(u, URLNormalizationFlags)
+	link = purell.NormalizeURL(u, URLNormalisationFlags)
 	if u.Path == "" {
 		return link + "/", true
 	}

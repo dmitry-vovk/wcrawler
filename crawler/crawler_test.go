@@ -14,31 +14,48 @@ import (
 func TestCrawlerBuild(t *testing.T) {
 	const (
 		maxPages            uint64 = 2
-		maxParallelRequests uint = 76
+		maxParallelRequests uint   = 76
 	)
-	c := New().
-		MaxPages(maxPages).
-		MaxParallelRequests(maxParallelRequests).
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	var results []struct {
+		Link  string
+		Links []string
+	}
+	c := New(tFetcher, tFilter, func(link string, links []string) {
+		results = append(results, struct {
+			Link  string
+			Links []string
+		}{link, links})
+	}).MaxPages(maxPages).MaxParallelRequests(maxParallelRequests)
 	assert.Equal(t, maxPages, c.maxPages)
 	assert.Equal(t, maxParallelRequests, c.maxParallelRequests)
 	assert.Equal(t, tFetcher, c.fetcher)
 	assert.Equal(t, tFilter, c.filter)
 	tFetcher.(*testFetcher).statusCode = 200
 	if err := c.Run("http://example.com/"); assert.NoError(t, err) {
-		assert.Equal(t, map[string]map[string]struct{}{
-			"http://example.com/": {
-				"http://example.com/": {},
+		assert.Equal(t, []struct {
+			Link  string
+			Links []string
+		}{
+			{
+				Link:  "http://example.com/",
+				Links: []string{"http://example.com/"},
 			},
-		}, c.Results())
+		}, results)
 	}
 }
 
+func TestCrawlerIncompleteBuild1(t *testing.T) {
+	c := New(nil, nil, nil)
+	assert.Error(t, c.Run(""))
+}
+
+func TestCrawlerIncompleteBuild2(t *testing.T) {
+	c := New(tFetcher, nil, nil)
+	assert.Error(t, c.Run(""))
+}
+
 func TestCrawler_BadSeed(t *testing.T) {
-	c := New().
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	c := New(tFetcher, tFilter, nil)
 	assert.Equal(t, tFetcher, c.fetcher)
 	assert.Equal(t, tFilter, c.filter)
 	tFetcher.(*testFetcher).statusCode = 200
@@ -48,56 +65,106 @@ func TestCrawler_BadSeed(t *testing.T) {
 }
 
 func TestCrawler_Run_200(t *testing.T) {
-	c := New().
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	var results []struct {
+		Link  string
+		Links []string
+	}
+	c := New(tFetcher, tFilter, func(link string, links []string) {
+		results = append(results, struct {
+			Link  string
+			Links []string
+		}{link, links})
+	})
 	assert.Equal(t, tFetcher, c.fetcher)
 	assert.Equal(t, tFilter, c.filter)
 	tFetcher.(*testFetcher).statusCode = 200
 	if err := c.Run("http://example.com/"); assert.NoError(t, err) {
-		assert.Equal(t, map[string]map[string]struct{}{
-			"http://example.com/": {
-				"http://example.com/": {},
+		assert.Equal(t, []struct {
+			Link  string
+			Links []string
+		}{
+			{
+				Link:  "http://example.com/",
+				Links: []string{"http://example.com/"},
 			},
-		}, c.Results())
+		}, results)
 	}
 }
 
 func TestCrawler_Run_404(t *testing.T) {
-	c := New().
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	var results []struct {
+		Link  string
+		Links []string
+	}
+	c := New(tFetcher, tFilter, func(link string, links []string) {
+		results = append(results, struct {
+			Link  string
+			Links []string
+		}{link, links})
+	})
 	tFetcher.(*testFetcher).statusCode = 404
 	if err := c.Run("http://example.com/"); assert.NoError(t, err) {
-		assert.Equal(t, map[string]map[string]struct{}{
-			"http://example.com/": {},
-		}, c.Results())
+		assert.Equal(t, []struct {
+			Link  string
+			Links []string
+		}{
+			{
+				Link:  "http://example.com/",
+				Links: []string{},
+			},
+		}, results)
 	}
 }
 
 func TestCrawler_Run_Error(t *testing.T) {
-	c := New().
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	var results []struct {
+		Link  string
+		Links []string
+	}
+	c := New(tFetcher, tFilter, func(link string, links []string) {
+		results = append(results, struct {
+			Link  string
+			Links []string
+		}{link, links})
+	})
 	tFetcher.(*testFetcher).statusCode = 200
 	tFetcher.(*testFetcher).err = errors.New("some expected error")
 	if err := c.Run("http://example.com/"); assert.NoError(t, err) {
-		assert.Equal(t, map[string]map[string]struct{}{
-			"http://example.com/": {},
-		}, c.Results())
+		assert.Equal(t, []struct {
+			Link  string
+			Links []string
+		}{
+			{
+				Link:  "http://example.com/",
+				Links: []string{},
+			},
+		}, results)
 	}
 }
 
 func TestCrawler_Parse_Error(t *testing.T) {
-	c := New().
-		WithFetcher(tFetcher).
-		WithFilter(tFilter)
+	var results []struct {
+		Link  string
+		Links []string
+	}
+	c := New(tFetcher, tFilter, func(link string, links []string) {
+		results = append(results, struct {
+			Link  string
+			Links []string
+		}{link, links})
+	})
 	tFetcher.(*testFetcher).statusCode = 200
 	tFetcher.(*testFetcher).nilBody = true
 	if err := c.Run("http://example.com/"); assert.NoError(t, err) {
-		assert.Equal(t, map[string]map[string]struct{}{
-			"http://example.com/": {},
-		}, c.Results())
+		assert.Equal(t, []struct {
+			Link  string
+			Links []string
+		}{
+			{
+				Link:  "http://example.com/",
+				Links: []string{},
+			},
+		}, results)
 	}
 }
 

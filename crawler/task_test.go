@@ -7,10 +7,8 @@ import (
 )
 
 func TestTask(t *testing.T) {
-	task := NewTask(CrawlJob{
+	task := newTask(crawlJob{
 		Link: string(rune(0x7f)),
 	})
-	assert.Panics(t, func() {
-		task.Process(nil)
-	})
+	assert.Error(t, task.Process(nil).Error)
 }

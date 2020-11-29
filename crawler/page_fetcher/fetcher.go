@@ -7,12 +7,13 @@ import (
 	"time"
 )
 
+// Fetcher can go and fetch remote web page
 type Fetcher struct {
-	timeout        time.Duration
-	accept         string
-	userAgent      string
-	doHeadRequests bool
-	client         *http.Client
+	timeout        time.Duration // network operations timeout value
+	accept         string        // default 'Accept' http header
+	userAgent      string        // default 'User-Agent' http header
+	doHeadRequests bool          // whether to perform HEAD requests before GET requests
+	client         *http.Client  // http client to use for requests
 }
 
 type method string
@@ -26,17 +27,21 @@ const (
 	methodHEAD          method = `HEAD`
 )
 
+// NewFetcher creates an instance of Fetcher with options
 func NewFetcher(options ...Option) *Fetcher {
 	f := Fetcher{}
+	// apply options
 	for _, fn := range options {
 		fn(&f)
 	}
+	// set defaults
 	if f.timeout == 0 {
 		f.timeout = defaultTimeout
 	}
 	if f.accept == "" {
 		f.accept = defaultAcceptHeader
 	}
+	// build http client
 	f.client = &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout:   f.timeout,
@@ -50,6 +55,7 @@ func NewFetcher(options ...Option) *Fetcher {
 	return &f
 }
 
+// Fetch performs http requests and build response object
 func (f *Fetcher) Fetch(r *Request) (*Response, error) {
 	if f.doHeadRequests {
 		resp, err := f.client.Do(f.buildRequest(r, methodHEAD))
@@ -70,6 +76,7 @@ func (f *Fetcher) Fetch(r *Request) (*Response, error) {
 	return buildResponse(r, resp), nil
 }
 
+// buildRequest assembles http.Request according to parameters
 func (f Fetcher) buildRequest(r *Request, method method) *http.Request {
 	link := r.URL.String()
 	// http.NewRequest will not return an error with this set of arguments

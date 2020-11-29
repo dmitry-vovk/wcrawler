@@ -15,21 +15,24 @@ import (
 	"github.com/temoto/robotstxt"
 )
 
+const (
+	defaultConfigFile = "config.json"
+	configFileEnv     = "CRAWLER_CONFIG"
+)
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	// Load config
-	configFile := "config.json"
-	if len(os.Args) == 2 {
-		configFile = os.Args[1]
-	} else if cfgPath := os.Getenv("CRAWLER_CONFIG"); cfgPath != "" {
-		configFile = cfgPath
+	cfg := mustLoadConfig()
+	start := time.Now()
+	if err := mustBuildCrawler(cfg, printResults).Run(cfg.SeedURL); err != nil {
+		log.Printf("Error running crawler: %s\n", err)
+	} else {
+		log.Printf("Crawler finished in %s\n", time.Since(start))
 	}
-	cfg, err := readConfig(configFile)
-	if err != nil {
-		log.Printf("Error reading config file %q: %s", configFile, err)
-		os.Exit(1)
-	}
-	// Initialize subsystems
+}
+
+func mustBuildCrawler(cfg *Config, resultsCallback func(string, []string)) *crawler.Crawler {
+	// Validate seed URL
 	u, err := url.Parse(cfg.SeedURL)
 	if err != nil {
 		log.Printf("Error parsing seed URL: %s", err)
@@ -38,6 +41,7 @@ func main() {
 		log.Print("Invalid seed URL")
 		os.Exit(2)
 	}
+	// Initialize dependencies
 	filter := url_filter.
 		NewFilter(u.Hostname()).
 		AllowWWWPrefix(cfg.AllowWWWPrefix)
@@ -52,20 +56,10 @@ func main() {
 		page_fetcher.WithHeadRequests(cfg.DoHeadRequests),
 	)
 	// Assemble a crawler instance
-	c := crawler.
-		New().
-		WithFilter(filter).
-		WithFetcher(fetcher).
+	return crawler.
+		New(fetcher, filter, resultsCallback).
 		MaxPages(cfg.MaxPages).
 		MaxParallelRequests(cfg.MaxParallelRequests)
-	// Run
-	start := time.Now()
-	if err = c.Run(cfg.SeedURL); err != nil {
-		log.Printf("Error running crawler: %s\n", err)
-	} else {
-		log.Printf("Crawler finished in %s\n", time.Since(start))
-		printResults(c.Results())
-	}
 }
 
 // Config contains all the variables needed for crawler
@@ -87,6 +81,21 @@ type Config struct {
 	MaxParallelRequests uint `json:"max_parallel_requests"`
 }
 
+func mustLoadConfig() *Config {
+	configFile := defaultConfigFile
+	if len(os.Args) == 2 {
+		configFile = os.Args[1]
+	} else if cfgPath := os.Getenv(configFileEnv); cfgPath != "" {
+		configFile = cfgPath
+	}
+	cfg, err := readConfig(configFile)
+	if err != nil {
+		log.Printf("Error reading config file %q: %s", configFile, err)
+		os.Exit(1)
+	}
+	return cfg
+}
+
 // readConfig returns config read from file or error
 func readConfig(filePath string) (*Config, error) {
 	f, err := os.Open(filePath)
@@ -103,6 +112,8 @@ func readConfig(filePath string) (*Config, error) {
 }
 
 // fetchRobots tries to get 'robots.txt' file for the seed URL
+// for simplicity, it is ok if 'robots.txt' could not be fetched
+// see https://developers.google.com/search/reference/robots_txt#handling-http-result-codes
 func fetchRobots(link string) *robotstxt.RobotsData {
 	resp, err := http.Get(link)
 	if err != nil {
@@ -117,11 +128,9 @@ func fetchRobots(link string) *robotstxt.RobotsData {
 	return r
 }
 
-func printResults(results map[string]map[string]struct{}) {
-	for link, links := range results {
-		fmt.Printf("Links found on the page %s\n", link)
-		for link := range links {
-			fmt.Printf("\t%s\n", link)
-		}
+func printResults(link string, links []string) {
+	fmt.Printf("Links found on the page %s\n", link)
+	for i := range links {
+		fmt.Printf("\t%s\n", links[i])
 	}
 }

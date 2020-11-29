@@ -1,46 +1,57 @@
 package crawler
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
+
+	"github.com/pkg/errors"
 
 	"github.com/dmitry-vovk/wcrawler/crawler/page_fetcher"
 	"github.com/dmitry-vovk/wcrawler/crawler/page_parser"
 	"github.com/dmitry-vovk/wcrawler/crawler/types"
 )
 
-type CrawlJob struct {
+type crawlJob struct {
 	Link     string
 	Referrer string
 }
 
-type CrawlResult struct {
+type crawlResult struct {
 	Link  string
 	Links []*url.URL
+	Error error
 }
 
-func (cr CrawlResult) CollectLinks() map[string]struct{} {
-	links := make(map[string]struct{})
+func (cr crawlResult) CollectLinks() []string {
+	links := make([]string, 0, len(cr.Links))
+	uniqueLinks := make(map[string]struct{})
 	for i := range cr.Links {
-		links[cr.Links[i].String()] = struct{}{}
+		link := cr.Links[i].String()
+		if _, ok := uniqueLinks[link]; !ok {
+			links = append(links, link)
+			uniqueLinks[link] = struct{}{}
+		}
 	}
+	sort.Strings(links)
 	return links
 }
 
-type Task struct {
-	job CrawlJob
+type task struct {
+	job crawlJob
 }
 
-func NewTask(link CrawlJob) *Task {
-	return &Task{job: link}
+func newTask(link crawlJob) *task {
+	return &task{job: link}
 }
 
-func (t *Task) Process(fetcher types.Fetcher) (result CrawlResult) {
+func (t *task) Process(fetcher types.Fetcher) (result crawlResult) {
+	result.Link = t.job.Link
 	u, err := url.Parse(t.job.Link)
 	if err != nil {
-		// if parsing fails here, we have a bug somewhere before
-		panic(err)
+		result.Error = errors.Wrap(err, "URL parse error")
+		return
 	}
 	request := page_fetcher.Request{
 		URL:          u,
@@ -49,22 +60,21 @@ func (t *Task) Process(fetcher types.Fetcher) (result CrawlResult) {
 			"text/html": {},
 		},
 	}
-	result.Link = t.job.Link
 	response, err := fetcher.Fetch(&request)
 	if err != nil {
-		log.Printf("Error fetching page %q: %s", t.job.Link, err)
+		result.Error = errors.Wrap(err, "fetch")
 		return
 	}
 	defer func() {
 		_ = response.Body.Close()
 	}()
 	if response.StatusCode != http.StatusOK {
-		log.Printf("Got %d status code from %q", response.StatusCode, t.job)
+		result.Error = fmt.Errorf("got status code %d", response.StatusCode)
 		return
 	}
 	page, err := page_parser.Parse(response.Body)
 	if err != nil {
-		log.Printf("Error parsing response from %q: %s", t.job, err)
+		result.Error = errors.Wrap(err, "parse")
 		return
 	}
 	for i := range page.Links {

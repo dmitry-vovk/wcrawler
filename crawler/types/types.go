@@ -1,3 +1,6 @@
+/*
+These types are required for testing
+*/
 package types
 
 import "github.com/dmitry-vovk/wcrawler/crawler/page_fetcher"
