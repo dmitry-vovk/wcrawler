@@ -11,7 +11,7 @@ func TestParse1(t *testing.T) {
 	r := bytes.NewReader([]byte(html1))
 	if result, err := Parse(r); assert.NoError(t, err) {
 		assert.Equal(t, "http://example.com/foo/bar", result.CanonicalURL)
-		assert.Equal(t, "http://example.com/foo/bar/", result.BaseURL)
+		assert.Equal(t, "http://example.com/foo/bar/", result.baseURL)
 		assert.Equal(t, []string{
 			"http://example.com/",
 			"http://example.com/foo/bar/page.html",
@@ -26,7 +26,7 @@ func TestParse2(t *testing.T) {
 	r := bytes.NewReader([]byte(html2))
 	if result, err := Parse(r); assert.NoError(t, err) {
 		assert.Equal(t, "", result.CanonicalURL)
-		assert.Equal(t, "", result.BaseURL)
+		assert.Equal(t, "", result.baseURL)
 		assert.Equal(t, []string{
 			"/",
 			"page.html",

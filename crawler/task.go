@@ -19,9 +19,10 @@ type crawlJob struct {
 }
 
 type crawlResult struct {
-	Link  string
-	Links []*url.URL
-	Error error
+	Link          string
+	CanonicalLink string
+	Links         []*url.URL
+	Error         error
 }
 
 func (cr crawlResult) CollectLinks() []string {
@@ -82,5 +83,6 @@ func (t *task) Process(fetcher types.Fetcher) (result crawlResult) {
 			result.Links = append(result.Links, u.ResolveReference(pageLink))
 		}
 	}
+	result.CanonicalLink = page.CanonicalURL
 	return
 }

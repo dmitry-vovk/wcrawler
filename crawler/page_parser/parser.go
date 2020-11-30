@@ -15,7 +15,7 @@ type ParsedPage struct {
 	// Canonical URL: <link rel="canonical" href="...">
 	CanonicalURL string
 	// Base URL: <base href="...">
-	BaseURL string
+	baseURL string
 }
 
 func (p *ParsedPage) addLink(link string) {
@@ -26,15 +26,17 @@ func (p *ParsedPage) addLink(link string) {
 
 // resolveLinks tries to convert relative links into absolute ones
 func (p *ParsedPage) resolveLinks() {
-	if p.BaseURL == "" {
+	if p.baseURL == "" {
 		return
 	}
-	if bu, err := url.Parse(p.BaseURL); err == nil { // ignore unparsable URL
+	if bu, err := url.Parse(p.baseURL); err == nil { // we ignore unparseable base URL
+		links := make([]string, 0, len(p.Links))
 		for i := range p.Links {
 			if lu, err := url.Parse(p.Links[i]); err == nil { // don't handle bad links
-				p.Links[i] = bu.ResolveReference(lu).String()
+				links = append(links, bu.ResolveReference(lu).String())
 			}
 		}
+		p.Links = links
 	}
 }
 
@@ -54,7 +56,7 @@ func Parse(body io.Reader) (*ParsedPage, error) {
 		page.CanonicalURL = strings.TrimSpace(href)
 	}
 	if href, ok := doc.Find(`base[href]`).First().Attr("href"); ok {
-		page.BaseURL = strings.TrimSpace(href)
+		page.baseURL = strings.TrimSpace(href)
 		page.resolveLinks()
 	}
 	return &page, nil

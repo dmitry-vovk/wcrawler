@@ -18,6 +18,9 @@ out:
 				go c.processJob(job)
 			}
 		case result := <-c.processedLinksC:
+			if result.CanonicalLink != "" {
+				c.processedLinks[result.CanonicalLink] = struct{}{}
+			}
 			delete(c.processingLinks, result.Link)
 			if c.resultCallback != nil {
 				c.resultCallback(result.Link, result.CollectLinks())
