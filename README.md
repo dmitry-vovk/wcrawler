@@ -40,7 +40,7 @@ Packages:
 Crawler configuration file has the following sytax:
 ```json
 {
-  "seed_url": "https://monzo.com",
+  "seed_url": "https://example.com",
   "ignore_robots_txt": false,
   "allow_www_prefix": true,
   "user_agent": "CrawlBot/0.1",
